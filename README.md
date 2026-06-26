@@ -1,182 +1,48 @@
-# GuardianSentinel - Ritual Chain Deployment
+# Privacy-Preserving AI Bounty Judge & GuardianSentinel
 
-> Level 3 submission: Custom Smart Contract + Sovereign Agent on Ritual Chain
+This repository contains the solution for the **Ritual Academy: Privacy-Preserving AI Bounty Judge** assignment, along with an advanced **Level 3** bonus submission featuring a Sovereign Agent and a Custom Smart Contract.
 
-## Deployed Contracts
+## 🏆 Track 1: REQUIRED - Commit-Reveal Bounty (AIJudge)
+
+**Deployed AIJudge Contract:** [`0x77331384Bb1808151C7111234464E403B4382251`](https://explorer.ritualfoundation.org/address/0x77331384Bb1808151C7111234464E403B4382251)  
+**Deploy Tx Hash:** `0xa7954f7196d0a5c06b19c0119c2dadc76338622a9f8308f7acaab82a54f11175`
+
+### Bounty Lifecycle
+The `AIJudge` contract has been updated to prevent plagiarism and front-running by implementing a Commit-Reveal scheme. The lifecycle is:
+1. **Create:** Owner creates a bounty with a rubric, reward, and deadline.
+2. **Commit Phase:** Participants submit a `bytes32` hash of their answer (`keccak256(answer + salt + msg.sender + bountyId)`). No plaintext is exposed on-chain.
+3. **Reveal Phase:** After the deadline, participants reveal their `answer` and `salt`. The contract verifies the hash. Only verified answers are stored.
+4. **Judging Phase:** Owner triggers the Ritual LLM Precompile (`0x0802`) to evaluate all revealed answers as a batch against the rubric.
+5. **Finalize:** Owner reads the AI's review and finalize the winner, transferring the reward.
+
+> 📚 **Detailed Architecture & Test Plan:** See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the complete state machine, security analysis, and test cases.
+
+### 💡 Reflection Question
+
+> *"What should be public, what should stay hidden, and what should be decided by AI versus by a human in a bounty system?"*
+
+**Answer:**
+1. **Public:** The bounty rubric, rules, deadline, reward, and the final winner must be public to ensure transparency and trust in the system.
+2. **Hidden:** The participants' submissions must remain hidden during the commit phase (using hashes or TEEs) to prevent plagiarism, front-running, and bias.
+3. **AI Decisions:** The AI should handle objective evaluation, filtering spam, scoring against the rubric, and providing detailed analytical reviews of the submissions.
+4. **Human Decisions:** Humans should handle the final approval and fund distribution, acting as an ultimate arbiter to catch AI hallucinations or nuanced context the LLM might miss.
+
+---
+
+## 🚀 Track 2 (Advanced) / Level 3: GuardianSentinel Sovereign Agent
+
+In addition to the required assignment, this repository includes a fully autonomous **Sovereign Agent** deployed on Ritual Chain using the Factory Harness pattern, accompanied by a custom permanent storage contract.
 
 | Component | Address | Type |
 |-----------|---------|------|
 | **GuardianSentinel** | [`0x857043f674806fa7144251BAbA625746683de0E7`](https://explorer.ritualfoundation.org/address/0x857043f674806fa7144251BAbA625746683de0E7) | Sovereign Agent (Harness) |
 | **RitualChronicle** | [`0xC01df623EAFC95B77028ceE5c1DA69c8ED79e45E`](https://explorer.ritualfoundation.org/address/0xC01df623EAFC95B77028ceE5c1DA69c8ED79e45E) | Custom Solidity Contract |
 
-**Wallet:** `0xDCEF810d9dd334fEBD74DF0A546cd6A57313dBb0`
-**Chain:** Ritual Chain (ID: 1979)
+### GuardianSentinel Features
+- **Autonomous Execution:** Wakes up every 2000 blocks (~11.7 min) via Ritual's Scheduler.
+- **Custom Identity:** Purpose-built prompt for chain security monitoring, threat assessment, and builder intelligence.
+- **Custom ECIES Implementation:** Wrote a from-scratch ECIES encryption module (`ecies_helper.py`) compatible with Ritual's TEE executor using `eth_keys` + `pycryptodome` (bypassing `eciespy` installation issues on Windows).
+- **HuggingFace Output:** [wzscarlet/guardianritualagent](https://huggingface.co/datasets/wzscarlet/guardianritualagent)
 
----
-
-## Architecture
-
-```
-                    RITUAL CHAIN (Chain ID: 1979)
-
-  +---------------------------+     +-----------------------------+
-  |   RitualChronicle.sol     |     |   GuardianSentinel Agent    |
-  |   (Custom Contract)       |     |   (Factory Harness)         |
-  |                           |     |                             |
-  |   * storeEntry(topic,txt) |     |   * Wakes every 2000 blocks |
-  |   * getEntry(id)          |     |   * AI inference via 0x080C |
-  |   * getRecentEntries(n)   |     |   * Custom prompt: chain    |
-  |   * getEntriesByTopic()   |     |     security & monitoring   |
-  |   * storeBatch()          |     |   * Results to HuggingFace  |
-  |                           |     |                             |
-  |   Permanent on-chain      |     |   Autonomous agent with     |
-  |   AI analysis storage     |     |   unique identity           |
-  +---------------------------+     +-----------------------------+
-         |                                    |
-         v                                    v
-   Demonstrates:                     Demonstrates:
-   Solidity + On-chain storage       Agent infra + TEE + ECIES
-   Custom errors + Events            Factory Harness pattern
-   Topic indexing + Batch ops        Scheduler + Rolling Window
-```
-
----
-
-## What Makes This Different
-
-Most participants use a copy-paste script to deploy a generic agent. This submission includes:
-
-1. **Custom Smart Contract** - `RitualChronicle.sol` with 6 public functions, custom errors, event emission, topic indexing, and batch writes. Not a template.
-
-2. **Custom Agent Identity** - "GuardianSentinel" with a purpose-built prompt for chain security monitoring, not a default DeFi analytics template.
-
-3. **Custom ECIES Implementation** - Wrote a from-scratch ECIES encryption module (`ecies_helper.py`) compatible with Ritual's TEE executor, because `eciespy` couldn't build on Python 3.14/Windows. Uses `eth_keys` + `pycryptodome` + `cryptography`.
-
-4. **Original Deployment Scripts** - All scripts written from understanding, not copied from a guide repo.
-
----
-
-## Project Structure
-
-```
-ritual-agent/
-|-- hardhat/                        # Smart contract project
-|   |-- contracts/
-|   |   +-- RitualChronicle.sol     # Custom contract (Solidity 0.8.24)
-|   +-- hardhat.config.ts           # Ritual Chain network configured
-|
-+-- sovereign-agent/                # Agent deployment
-    |-- scripts/
-    |   |-- deploy.py               # Sovereign agent deployer
-    |   |-- deploy_chronicle.py     # Contract deployer
-    |   |-- check-status.py         # Agent status checker
-    |   +-- ecies_helper.py         # Custom ECIES (no coincurve)
-    |-- templates/
-    |   +-- guardian-sentinel.txt   # Custom agent prompt
-    +-- README.md
-```
-
----
-
-## RitualChronicle Contract
-
-A permanent on-chain AI chronicle. Owner writes analysis entries, anyone can read.
-
-### Functions
-
-| Function | Access | Description |
-|----------|--------|-------------|
-| `storeEntry(topic, analysis)` | Owner | Store one entry |
-| `storeBatch(topics[], analyses[])` | Owner | Store multiple entries |
-| `getEntry(id)` | Public | Read entry by ID |
-| `getLatestEntry()` | Public | Read most recent entry |
-| `getRecentEntries(count)` | Public | Read last N entries |
-| `getEntriesByTopic(topic)` | Public | Get entry IDs by topic |
-| `transferOwnership(newOwner)` | Owner | Transfer ownership |
-
-### Events
-
-```solidity
-event EntryStored(uint256 indexed id, string topic, address indexed author, uint256 timestamp, uint256 blockNumber);
-event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-```
-
----
-
-## GuardianSentinel Agent
-
-An autonomous on-chain intelligence agent that monitors Ritual Chain ecosystem health.
-
-### Configuration
-
-| Parameter | Value |
-|-----------|-------|
-| Frequency | 2000 blocks (~11.7 min) |
-| Window | 5 calls per window |
-| Model | claude-opus-4-8 |
-| Funding | 0.1 RITUAL (~33 heartbeats) |
-| Lock | 30 days |
-| Output | HuggingFace: wzscarlet/guardianritualagent |
-
-### Agent Mission
-
-Each heartbeat, GuardianSentinel performs:
-1. **Network Pulse** - Block height, gas trends, health rating
-2. **Ecosystem Scan** - New contracts, active agents, token movements
-3. **Threat Assessment** - Suspicious patterns, attack signatures
-4. **Builder Intelligence** - Development trends, precompile usage, recommendations
-
----
-
-## Technical Challenges Solved
-
-| Challenge | Solution |
-|-----------|----------|
-| `eciespy`/`coincurve` won't build on Python 3.14 | Custom ECIES implementation using `eth_keys` + `pycryptodome` |
-| Scheduler `MAX_LIFESPAN` exceeded (error `0x88abf714`) | Reduced frequency from 5000 to 2000 blocks |
-| Windows cp1252 encoding crashes | All output ASCII-safe, all file reads use `encoding="utf-8"` |
-| MetaMask "transaction type not supported" | Direct Python tx signing with EIP-1559 (Type 2) |
-
----
-
-## Cost Breakdown
-
-| Step | Gas | Cost (RITUAL) |
-|------|-----|---------------|
-| Deploy Harness | 2,319k | ~0.005 |
-| Configure + Fund Agent | 5,973k | ~0.112 |
-| Deploy RitualChronicle | 1,948k | ~0.004 |
-| Write Genesis Entry | 461k | ~0.001 |
-| **Total** | - | **~0.13** |
-
----
-
-## How to Reproduce
-
-```bash
-# 1. Install dependencies
-python -m pip install web3 eth-abi pycryptodome cryptography
-
-# 2. Configure .env
-cd sovereign-agent
-cp .env.example .env
-# Fill in: PRIVATE_KEY, OPENAI_API_KEY, HF_TOKEN, HF_REPO_ID
-
-# 3. Deploy sovereign agent
-python scripts/deploy.py
-
-# 4. Deploy custom contract
-python scripts/deploy_chronicle.py
-
-# 5. Check status
-python scripts/check-status.py
-```
-
----
-
-## Links
-
-- [Ritual Explorer - GuardianSentinel](https://explorer.ritualfoundation.org/address/0x857043f674806fa7144251BAbA625746683de0E7)
-- [Ritual Explorer - RitualChronicle](https://explorer.ritualfoundation.org/address/0xC01df623EAFC95B77028ceE5c1DA69c8ED79e45E)
-- [HuggingFace Dataset](https://huggingface.co/datasets/wzscarlet/guardianritualagent)
-- [Ritual Docs](https://docs.ritualfoundation.org)
+### RitualChronicle Contract
+A custom Solidity contract (`RitualChronicle.sol`) that acts as a permanent on-chain AI chronicle. It features topic indexing, batch writes, and custom events to store the agent's insights immutably.
