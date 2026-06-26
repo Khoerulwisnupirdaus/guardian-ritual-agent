@@ -102,7 +102,7 @@ def main():
         "GuardianSentinel Chronicle initialized on Ritual Chain. "
         "This is the genesis entry of an autonomous on-chain AI chronicle. "
         f"Deployed by {sender} at block {receipt.blockNumber}. "
-        "Companion agent: 0x857043f674806fa7144251BAbA625746683de0E7. "
+        "Companion agent: 0x9E9488aE69f17a248520dC8D542E1ac2452Dc80B. "
         "Mission: permanent, immutable record of AI-generated chain intelligence."
     )
 
