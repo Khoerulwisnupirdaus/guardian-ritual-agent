@@ -35,7 +35,7 @@ In addition to the required assignment, this repository includes a fully autonom
 
 | Component | Address | Type |
 |-----------|---------|------|
-| **GuardianSentinel** | [`0x9E9488aE69f17a248520dC8D542E1ac2452Dc80B`](https://explorer.ritualfoundation.org/address/0x9E9488aE69f17a248520dC8D542E1ac2452Dc80B) | Sovereign Agent (Harness) |
+| **GuardianSentinel** | [`0x9E9488aE69f17a248520dC8D542E1ac2452Dc80B`](https://explorer.ritualfoundation.org/address/0x9E9488aE69f17a248520dC8D542E1ac2452Dc80B) | Sovereign Agent (Harness) — **Active** |
 | **RitualChronicle** | [`0xC01df623EAFC95B77028ceE5c1DA69c8ED79e45E`](https://explorer.ritualfoundation.org/address/0xC01df623EAFC95B77028ceE5c1DA69c8ED79e45E) | Custom Solidity Contract |
 
 ### GuardianSentinel Features
