@@ -1,0 +1,29 @@
+# Secrets
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Node
+node_modules/
+hardhat/cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+.harness_address
+.chronicle_address
+*.log
+
+# System
+.DS_Store
+Thumbs.db
+
+# Agent config (local only)
+.agents/
+.claude/

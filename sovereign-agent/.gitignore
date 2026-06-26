@@ -1,0 +1,5 @@
+.env
+.harness_address
+__pycache__/
+*.pyc
+venv/
